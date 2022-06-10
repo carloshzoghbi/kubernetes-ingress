@@ -1,15 +1,18 @@
-import requests
-import pytest
 import json
+import re
 
+import pytest
+import requests
 from kubernetes.client.rest import ApiException
-
 from settings import TEST_DATA
-from suite.custom_assertions import wait_and_assert_status_code, \
-    assert_event_starts_with_text_and_contains_errors
-from suite.vs_vsr_resources_utils import get_vs_nginx_template_conf, patch_v_s_route_from_yaml, \
-    patch_virtual_server_from_yaml
-from suite.resources_utils import get_first_pod_name, get_events, wait_before_test
+from suite.custom_assertions import (
+    assert_event_starts_with_text_and_contains_errors,
+    wait_and_assert_status_code)
+from suite.resources_utils import (get_events, get_first_pod_name,
+                                   wait_before_test)
+from suite.vs_vsr_resources_utils import (get_vs_nginx_template_conf,
+                                          patch_v_s_route_from_yaml,
+                                          patch_virtual_server_from_yaml)
 
 
 @pytest.mark.vsr
@@ -113,14 +116,14 @@ class TestVSRErrorPages:
                                       v_s_route_setup.route_m.namespace)
         except ApiException as ex:
             assert ex.status == 422 \
-                   and "spec.subroutes.errorPages.codes" in ex.body \
-                   and "spec.subroutes.errorPages.redirect.code" in ex.body \
-                   and "spec.subroutes.errorPages.redirect.url" in ex.body \
-                   and "spec.subroutes.errorPages.return.code" in ex.body \
-                   and "spec.subroutes.errorPages.return.type" in ex.body \
-                   and "spec.subroutes.errorPages.return.body" in ex.body \
-                   and "spec.subroutes.errorPages.return.headers.name" in ex.body \
-                   and "spec.subroutes.errorPages.return.headers.value" in ex.body
+                and bool(re.search(r"spec\.subroutes\[?[0-9]*\]?\.errorPages\[?[0-9]*\]?\.codes", ex.body)) \
+                and bool(re.search(r"spec\.subroutes\[?[0-9]*\]?\.errorPages\[?[0-9]*\]?\.redirect\.code", ex.body)) \
+                and bool(re.search(r"spec\.subroutes\[?[0-9]*\]?\.errorPages\[?[0-9]*\]?\.redirect\.url", ex.body)) \
+                and bool(re.search(r"spec\.subroutes\[?[0-9]*\]?\.errorPages\[?[0-9]*\]?\.return\.code", ex.body)) \
+                and bool(re.search(r"spec\.subroutes\[?[0-9]*\]?\.errorPages\[?[0-9]*\]?\.return\.type", ex.body)) \
+                and bool(re.search(r"spec\.subroutes\[?[0-9]*\]?\.errorPages\[?[0-9]*\]?\.return\.body", ex.body)) \
+                and bool(re.search(r"spec\.subroutes\[?[0-9]*\]?\.errorPages\[?[0-9]*\]?\.return\.headers\.name", ex.body)) \
+                and bool(re.search(r"spec\.subroutes\[?[0-9]*\]?\.errorPages\[?[0-9]*\]?\.return\.headers\.value", ex.body))
         except Exception as ex:
             pytest.fail(f"An unexpected exception is raised: {ex}")
         else:
