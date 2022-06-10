@@ -1,13 +1,18 @@
-import pytest
 import json
+import re
+
+import pytest
 import requests
 from kubernetes.client.rest import ApiException
-
 from settings import TEST_DATA
-from suite.custom_assertions import assert_event_and_get_count, wait_and_assert_status_code, \
-    assert_event_count_increased, assert_event_starts_with_text_and_contains_errors
-from suite.vs_vsr_resources_utils import get_vs_nginx_template_conf, patch_v_s_route_from_yaml
-from suite.resources_utils import get_first_pod_name, get_events, wait_before_test
+from suite.custom_assertions import (
+    assert_event_and_get_count, assert_event_count_increased,
+    assert_event_starts_with_text_and_contains_errors,
+    wait_and_assert_status_code)
+from suite.resources_utils import (get_events, get_first_pod_name,
+                                   wait_before_test)
+from suite.vs_vsr_resources_utils import (get_vs_nginx_template_conf,
+                                          patch_v_s_route_from_yaml)
 
 
 @pytest.mark.vsr
@@ -111,7 +116,6 @@ class TestVSRCannedResponses:
         events = get_events(kube_apis.v1, v_s_route_setup.route_m.namespace)
         assert_event_starts_with_text_and_contains_errors(vsr_m_event_text, events, invalid_fields)
 
-    @pytest.mark.skip(reason="TODO: investigate why this test fails")
     def test_openapi_validation_flow(self, kube_apis, ingress_controller_prerequisites,
                                      crd_ingress_controller, v_s_route_setup):
         ic_pod_name = get_first_pod_name(kube_apis.v1, ingress_controller_prerequisites.namespace)
@@ -126,9 +130,9 @@ class TestVSRCannedResponses:
                                       v_s_route_setup.route_m.name, vsr_src, v_s_route_setup.namespace)
         except ApiException as ex:
             assert ex.status == 422 \
-                and "spec.subroutes.action.return.type" in ex.body \
-                and "spec.subroutes.action.return.body" in ex.body \
-                and "spec.subroutes.action.return.code" in ex.body
+                and bool(re.search(r"spec\.subroutes\[?[0-9]*\]?\.action\.return\.type", ex.body))\
+                and bool(re.search(r"spec\.subroutes\[?[0-9]*\]?\.action\.return\.body", ex.body)) \
+                and bool(re.search(r"spec\.subroutes\[?[0-9]*\]?\.action\.return\.code", ex.body))
         except Exception as ex:
             pytest.fail(f"An unexpected exception is raised: {ex}")
         else:
