@@ -1,13 +1,17 @@
-import pytest
 import json
+import re
+
+import pytest
 import requests
 from kubernetes.client.rest import ApiException
-
-from suite.custom_assertions import wait_and_assert_status_code, assert_vs_conf_not_exists, \
-    assert_event_starts_with_text_and_contains_errors
 from settings import TEST_DATA
-from suite.vs_vsr_resources_utils import patch_virtual_server_from_yaml, get_vs_nginx_template_conf
-from suite.resources_utils import wait_before_test, get_first_pod_name, get_events
+from suite.custom_assertions import (
+    assert_event_starts_with_text_and_contains_errors,
+    assert_vs_conf_not_exists, wait_and_assert_status_code)
+from suite.resources_utils import (get_events, get_first_pod_name,
+                                   wait_before_test)
+from suite.vs_vsr_resources_utils import (get_vs_nginx_template_conf,
+                                          patch_virtual_server_from_yaml)
 
 
 @pytest.mark.vs
@@ -87,14 +91,15 @@ class TestVSErrorPages:
                                            virtual_server_setup.namespace)
         except ApiException as ex:
             assert ex.status == 422 \
-                   and "spec.routes.errorPages.codes" in ex.body \
-                   and "spec.routes.errorPages.redirect.code" in ex.body \
-                   and "spec.routes.errorPages.redirect.url" in ex.body \
-                   and "spec.routes.errorPages.return.code" in ex.body \
-                   and "spec.routes.errorPages.return.type" in ex.body \
-                   and "spec.routes.errorPages.return.body" in ex.body \
-                   and "spec.routes.errorPages.return.headers.name" in ex.body \
-                   and "spec.routes.errorPages.return.headers.value" in ex.body
+                and bool(re.search(r"spec\.routes\[?[0-9]*\]?\.errorPages\[?[0-9]*\]?\.codes", ex.body)) \
+                and bool(re.search(r"spec\.routes\[?[0-9]*\]?\.errorPages\[?[0-9]*\]?\.redirect\.code", ex.body)) \
+                and bool(re.search(r"spec\.routes\[?[0-9]*\]?\.errorPages\[?[0-9]*\]?\.redirect\.url", ex.body)) \
+                and bool(re.search(r"spec\.routes\[?[0-9]*\]?\.errorPages\[?[0-9]*\]?\.return\.code", ex.body)) \
+                and bool(re.search(r"spec\.routes\[?[0-9]*\]?\.errorPages\[?[0-9]*\]?\.return\.type", ex.body)) \
+                and bool(re.search(r"spec\.routes\[?[0-9]*\]?\.errorPages\[?[0-9]*\]?\.return\.body", ex.body)) \
+                and bool(re.search(r"spec\.routes\[?[0-9]*\]?\.errorPages\[?[0-9]*\]?\.return\.headers\.name", ex.body)) \
+                and bool(re.search(r"spec\.routes\[?[0-9]*\]?\.errorPages\[?[0-9]*\]?\.return\.headers\.value", ex.body))
+
         except Exception as ex:
             pytest.fail(f"An unexpected exception is raised: {ex}")
         else:
