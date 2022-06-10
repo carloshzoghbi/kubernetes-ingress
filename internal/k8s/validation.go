@@ -3,6 +3,7 @@ package k8s
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -62,7 +63,9 @@ const (
 )
 
 const (
-	commaDelimiter = ","
+	commaDelimiter           = ","
+	annotationValueFmt       = `([^"$\\]|\\[^$])*`
+	annotationValueFmtErrMsg = `a valid annotation value must have all '"' escaped and must not contain any '$' or end with an unescaped '\'`
 )
 
 type annotationValidationContext struct {
@@ -83,6 +86,8 @@ type (
 	annotationValidationConfig map[string][]annotationValidationFunc
 	validatorFunc              func(val string) error
 )
+
+var validAnnotationValueRegex = regexp.MustCompile("^" + annotationValueFmt + "$")
 
 var (
 	// annotationValidations defines the various validations which will be applied in order to each ingress annotation.
@@ -198,15 +203,20 @@ var (
 		},
 		jwtRealmAnnotation: {
 			validatePlusOnlyAnnotation,
+			validateJWTRealm,
+			validateRelatedAnnotation(jwtKeyAnnotation, validateIsTrue),
 		},
 		jwtKeyAnnotation: {
 			validatePlusOnlyAnnotation,
+			validateJWTKey,
 		},
 		jwtTokenAnnotation: {
 			validatePlusOnlyAnnotation,
+			validateRelatedAnnotation(jwtKeyAnnotation, validateIsTrue),
 		},
 		jwtLoginURLAnnotation: {
 			validatePlusOnlyAnnotation,
+			validateRelatedAnnotation(jwtKeyAnnotation, validateIsTrue),
 		},
 		listenPortsAnnotation: {
 			validateRequiredAnnotation,
@@ -276,6 +286,39 @@ var (
 	}
 	annotationNames = sortedAnnotationNames(annotationValidations)
 )
+
+func validateJWTKey(context *annotationValidationContext) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	if context.value == "" {
+		return allErrs
+	}
+
+	for _, msg := range validation.IsDNS1123Subdomain(context.value) {
+		allErrs = append(allErrs, field.Invalid(context.fieldPath, context.value, msg))
+	}
+
+	return allErrs
+
+}
+
+func validateJWTRealm(context *annotationValidationContext) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	//realm := context.value
+
+	if context.value == "" {
+		return append(allErrs, field.Required(context.fieldPath, ""))
+	}
+
+	if !validAnnotationValueRegex.MatchString(context.value) {
+		msg := validation.RegexError(annotationValueFmtErrMsg, annotationValueFmt, "My Realm", "Cafe App")
+		allErrs = append(allErrs, field.Invalid(context.fieldPath, context.value, msg))
+	}
+
+	return allErrs
+
+}
 
 func validateHTTPHeadersAnnotation(context *annotationValidationContext) field.ErrorList {
 	var allErrs field.ErrorList

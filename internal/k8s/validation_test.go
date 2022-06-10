@@ -1352,6 +1352,7 @@ func TestValidateNginxIngressAnnotations(t *testing.T) {
 		{
 			annotations: map[string]string{
 				"nginx.com/jwt-realm": "my-jwt-realm",
+				"nginx.com/jwt-key":   "my-jwk",
 			},
 			specServices:          map[string]bool{},
 			isPlus:                true,
@@ -1405,7 +1406,49 @@ func TestValidateNginxIngressAnnotations(t *testing.T) {
 		},
 		{
 			annotations: map[string]string{
+				"nginx.com/jwt-token": "true",
+				"nginx.com/jwt-key":   "my-jwk",
+			},
+			specServices:          map[string]bool{},
+			isPlus:                true,
+			appProtectEnabled:     false,
+			appProtectDosEnabled:  false,
+			internalRoutesEnabled: false,
+			expectedErrors:        nil,
+			msg:                   "valid nginx.com/jwt-token annotation",
+		},
+		{
+			annotations: map[string]string{
+				"nginx.com/jwt-realm": "realm$1",
+			},
+			specServices:          map[string]bool{},
+			isPlus:                true,
+			appProtectEnabled:     false,
+			appProtectDosEnabled:  false,
+			internalRoutesEnabled: false,
+			expectedErrors: []string{
+				`annotations.nginx.com/jwt-realm: Invalid value: "realm$1": a valid annotation value must have all '"' escaped and must not contain any '$' or end with an unescaped '\' (e.g. 'My Realm',  or 'Cafe App', regex used for validation is '([^"$\\]|\\[^$])*')`,
+			},
+			msg: "valid nginx.com/jwt-token annotation",
+		},
+		{
+			annotations: map[string]string{
+				"nginx.com/jwt-key": "app/jwk-secret",
+			},
+			specServices:          map[string]bool{},
+			isPlus:                true,
+			appProtectEnabled:     false,
+			appProtectDosEnabled:  false,
+			internalRoutesEnabled: false,
+			expectedErrors: []string{
+				`annotations.nginx.com/jwt-realm: Invalid value: "realm$1": a valid annotation value must have all '"' escaped and must not contain any '$' or end with an unescaped '\' (e.g. 'My Realm',  or 'Cafe App', regex used for validation is '([^"$\\]|\\[^$])*')`,
+			},
+			msg: "valid nginx.com/jwt-token annotation",
+		},
+		{
+			annotations: map[string]string{
 				"nginx.com/jwt-token": "$cookie_auth_token",
+				"nginx.com/jwt-key":   "my-jwk",
 			},
 			specServices:          map[string]bool{},
 			isPlus:                true,
@@ -1433,6 +1476,7 @@ func TestValidateNginxIngressAnnotations(t *testing.T) {
 		{
 			annotations: map[string]string{
 				"nginx.com/jwt-login-url": "https://login.example.com",
+				"nginx.com/jwt-key":       "my-jwk",
 			},
 			specServices:          map[string]bool{},
 			isPlus:                true,
@@ -1910,7 +1954,7 @@ func TestValidateNginxIngressAnnotations(t *testing.T) {
 			expectedErrors: []string{
 				`annotations.nginx.org/ssl-services: Invalid value: "service-1,service-2": must be a comma-separated list of services. The following services were not found: service-2`,
 			},
-			msg: "invalid nginx.org/ssl-services annotation, service does not exist",
+			msg: "invalid nginx.org/ssl-se§rvices annotation, service does not exist",
 		},
 
 		{
