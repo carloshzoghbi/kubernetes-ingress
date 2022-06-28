@@ -10,7 +10,7 @@ spec:
     description: Medium accuracy user defined signature with tag (Fruits)
     name: Apple_medium_acc
     risk: medium
-    rule: content:"apple"; nocase;
+    rule: content:"hi"; nocase;
     signatureType: request
     systems:
     - name: Microsoft Windows
