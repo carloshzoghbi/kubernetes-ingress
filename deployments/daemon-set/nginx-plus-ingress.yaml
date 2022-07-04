@@ -18,7 +18,7 @@ spec:
     spec:
       serviceAccountName: nginx-ingress
       containers:
-      - image: carloshzoghbi/ch_ingress:2.1.1
+      - image: carloshzoghbi/lab-guadalajara:2.2.2
         imagePullPolicy: IfNotPresent
         name: nginx-plus-ingress
         ports:
